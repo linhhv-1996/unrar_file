@@ -11,9 +11,11 @@ class UnrarFile {
   static Future<bool> isPasswordProtected(String filePath) async {
     try {
       final bool? result = await _channel.invokeMethod('isPasswordProtected', {"file_path": filePath});
+      print("invokeMethod");
       return result ?? false;
     } catch (e) {
-      return false;
+      print("Exception");
+      throw e.toString();
     }
   }
 
