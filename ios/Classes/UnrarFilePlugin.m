@@ -15,7 +15,29 @@ static inline NSString* NSStringFromBOOL(BOOL aBool) {
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-  if ([@"extractRAR" isEqualToString:call.method]) {
+  if ([@"isPasswordProtected" isEqualToString:call.method]) {
+    NSString* file_path = call.arguments[@"file_path"];
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSError *archiveError = nil;
+        URKArchive *archive = [[URKArchive alloc] initWithPath:file_path error:&archiveError];
+        
+        if (archiveError) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                // Trả về error cho Flutter xử lý nếu file lỗi/không tồn tại
+                result([FlutterError errorWithCode:@"FILE_ERROR" 
+                                         message:archiveError.localizedDescription 
+                                         details:nil]);
+            });
+            return;
+        }
+        
+        BOOL isProtected = archive.isPasswordProtected;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            result(@(isProtected));
+        });
+    });
+  } else if ([@"extractRAR" isEqualToString:call.method]) {
     NSString* file_path = call.arguments[@"file_path"];
     NSString* destination_path = call.arguments[@"destination_path"];
     NSString* password = call.arguments[@"password"];
