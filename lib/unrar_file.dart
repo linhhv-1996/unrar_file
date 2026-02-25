@@ -6,8 +6,16 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 class UnrarFile {
-  static const MethodChannel _channel =
-      const MethodChannel('unrar_file');
+  static const MethodChannel _channel = const MethodChannel('unrar_file');
+
+  static Future<bool> isPasswordProtected(String filePath) async {
+    try {
+      final bool? result = await _channel.invokeMethod('isPasswordProtected', {"file_path": filePath});
+      return result ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
 
   static Future<String?> extract_rar(file_path, destination_path, {password=""}) async {
     try {
@@ -35,3 +43,4 @@ class UnrarFile {
     }
   }
 }
+
