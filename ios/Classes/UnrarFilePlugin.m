@@ -19,18 +19,30 @@ static inline NSString* NSStringFromBOOL(BOOL aBool) {
     NSString* file_path = call.arguments[@"file_path"];
     NSString* destination_path = call.arguments[@"destination_path"];
     NSString* password = call.arguments[@"password"];
-    NSError *archiveError = nil;
-    URKArchive *archive = [[URKArchive alloc] initWithPath:file_path
-                                                 error:&archiveError];
-    NSError *error = nil;
-      BOOL extractFilesSuccessful;
-    if (archive.isPasswordProtected && password.length!=0) {
-        archive.password = password;
-    }
-    extractFilesSuccessful = [archive extractFilesTo:destination_path overwrite:NO
-        error:&error];
     
-    result(NSStringFromBOOL(extractFilesSuccessful));
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        
+        NSError *archiveError = nil;
+        URKArchive *archive = [[URKArchive alloc] initWithPath:file_path
+                                                         error:&archiveError];
+        NSError *error = nil;
+        BOOL extractFilesSuccessful = NO;
+        
+        if (archive) {
+            if (archive.isPasswordProtected && password.length != 0) {
+                archive.password = password;
+            }
+            // Việc giải nén tốn thời gian giờ sẽ chạy ngầm, không block UI
+            extractFilesSuccessful = [archive extractFilesTo:destination_path overwrite:NO error:&error];
+        }
+        
+        // TRẢ KẾT QUẢ VỀ MAIN THREAD CHO FLUTTER
+        dispatch_async(dispatch_get_main_queue(), ^{
+            result(NSStringFromBOOL(extractFilesSuccessful));
+        });
+        
+    });
+    
   } else {
     result(FlutterMethodNotImplemented);
   }
